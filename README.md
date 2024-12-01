@@ -13,3 +13,6 @@ Sistem Pembelanjaan Online "EG-Distro" ini adalah kode program berbasis Java yan
 
 Data real-time costumer, barang dan daftar belanjaan (invoice) disimpan ke dalam file txt.
 
+link video :
+https://drive.google.com/file/d/1rHS2Pi9cJXEKohgkjCfsIVEbl-QyfBR_/view?usp=sharing
+
