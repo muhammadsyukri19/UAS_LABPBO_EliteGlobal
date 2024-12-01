@@ -47,10 +47,6 @@ class Customer extends Akun {
         
         listTransaksi.add(transaksi);
         historiTransaksi.add(transaksi);
-        
-        // Simpan transaksi ke file
-        FileHandler.saveTransaction(transaksi);
-        
         keranjang.barang.clear();
         FileHandler.clearCart(this.getId());
     }
@@ -76,7 +72,7 @@ class Customer extends Akun {
         System.out.println("2. Mandiri");
         System.out.println("3. Bank Aceh");
         System.out.println("4. BCA");
-        System.out.print("Masukkan pilihan (1-4): ");
+        System.out.print("Masukkan pilihan: ");
     }
 
     @Override
