@@ -10,7 +10,7 @@ public class Main {
         Admin admin = new Admin("admin", "adminpass");
 
         // Baca data barang dari file
-        loadProductsFromFile(listBarang);
+        FileHandler.loadProductsFromFile(listBarang);
 
         boolean isLoggedIn = true;
 
@@ -56,15 +56,11 @@ public class Main {
         }
     }
 
-    private static void loadProductsFromFile(ListBarang listBarang) {
-        // Method untuk load barang dari file
-        // Misalnya, membaca dari file dan mengisi listBarang
-    }
-
     private static boolean adminLogin(Admin admin, ListBarang productList, List<Transaksi> transactionList) {
-        boolean isLoggedIn = false;
-    
-        do {
+        int attempts = 0;
+        final int MAX_ATTEMPTS = 3;
+        
+        while (attempts < MAX_ATTEMPTS) {
             try {
                 System.out.print("Masukkan username: ");
                 String idUser = scanner.next();
@@ -72,24 +68,26 @@ public class Main {
                 String password = scanner.next();
     
                 if (admin.login(idUser, password)) {
-                    // Menampilkan animasi loading
                     System.out.println("Login berhasil sebagai Admin!");
                     showLoadingAnimation("Memuat menu Admin", 100);
     
                     AdminDriver adminDriver = new AdminDriver(productList, transactionList);
                     adminDriver.Menu(productList, transactionList);
-                    isLoggedIn = true;
+                    return true;
                 } else {
-                    System.out.println("Login gagal. Username atau password tidak valid.");
+                    attempts++;
+                    System.out.printf("Login gagal. Sisa percobaan: %d%n", MAX_ATTEMPTS - attempts);
                 }
     
             } catch (Exception e) {
                 System.out.println("Terjadi kesalahan. Silakan coba lagi.");
-                scanner.nextLine(); // Mengonsumsi karakter newline
+                scanner.nextLine();
+                attempts++;
             }
-        } while (!isLoggedIn);
-    
-        return isLoggedIn;
+        }
+        
+        System.out.println("Terlalu banyak percobaan gagal. Kembali ke menu utama.");
+        return false;
     }
     
     private static boolean customerLogin(List<Customer> customerList, ListBarang listBarang, List<Transaksi> transactionList) {
