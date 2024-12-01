@@ -1,5 +1,5 @@
-import java.util.List;
 import java.text.DecimalFormat;
+import java.util.List;
 
 class Transaksi {
     static int hitungTransaksi;
@@ -35,23 +35,24 @@ class Transaksi {
 
     void cetakResi() {
         DecimalFormat formatter = new DecimalFormat("#,###");
-        System.out.println("----------------------------");
-        System.out.println("\t<<< EG Distro >>>");
-        System.out.println("----------------------------");
-        System.out.println("Resi Transaksi #" + IDTransaksi);
-        System.out.println("----------------------------");
-        System.out.println("User: " + akun.id);
-        System.out.println("Metode Pembayaran: " + pembayaran);
-        System.out.println("----------------------------");
-        System.out.println("Daftar Barang:");
+        System.out.println("+----------------------------------------+");
+        System.out.println("+\t     <<< EG Distro >>>\t         +");               
+        System.out.println("+----------------------------------------+");
+        System.out.println("+\t     Resi Transaksi #" + IDTransaksi + "\t         +");
+        System.out.println("+----------------------------------------+");
+        System.out.println(" User: " + akun.id + "\t         ");
+        System.out.println(" Metode Pembayaran: " + pembayaran);
+        System.out.println("+----------------------------------------+");
+        System.out.println("+ Daftar Barang:");
 
         for (Barang barang : barang) {
-            System.out.println("- " + barang.getNama() + " (ID: " + barang.getId() + ", Harga: " + barang.getHarga() + ")");
+            System.out.println("+ - " + barang.getNama() + " (ID: " + barang.getId() + ", Harga: " + barang.getHarga() + ")");
         }
 
-        System.out.println("----------------------------");
-        System.out.println("Total Harga: Rp " + formatter.format(totalHarga));
-        System.out.println("----------------------------");
+        System.out.println("+----------------------------------------+");
+        System.out.println("+ Total Harga: Rp " + formatter.format(totalHarga));
+        System.out.println("+----------------------------------------+");
         System.out.println("<<<< Terima kasih telah berbelanja di EG Distro >>>>");
+        System.out.println("------------------------------------------");
     }
 }
