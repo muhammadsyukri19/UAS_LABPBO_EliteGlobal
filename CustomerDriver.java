@@ -47,7 +47,7 @@ class CustomerDriver extends Driver {
     }
 
     private int getUserInput() {
-        System.out.print("Pilih opsi (1/2/3/4/5/6): ");
+        System.out.print("Pilih opsi: ");
         return scanner.nextInt();
     }
 
@@ -79,7 +79,7 @@ class CustomerDriver extends Driver {
         System.out.println("1. QRIS");
         System.out.println("2. Bank");
         System.out.println("3. COD");
-        System.out.print("Masukkan pilihan (1/2/3): ");
+        System.out.print("Masukkan pilihan: ");
         int pembayaranOption = scanner.nextInt();
 
         Pembayaran pembayaran = switch (pembayaranOption) {
