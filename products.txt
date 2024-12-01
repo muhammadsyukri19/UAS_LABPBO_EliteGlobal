@@ -1,0 +1,8 @@
+1111,Sepatu Converse,540000,23
+1112,T-Shirt Pria Uniqlo,120000,54
+1113,Celana Cargo Stone Island,430000,34
+1114,baju Kaos Pria maternal,230000,34
+1115,Topi gucci,234000,24
+1116,tas eiger,540000,245
+1117,Sepatu gucci,2300000,34
+1118,Dompet LV,230000,34
