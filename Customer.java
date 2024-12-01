@@ -15,13 +15,15 @@ class Customer extends Akun {
     private void loadSavedCart() {
         try {
             List<Barang> savedItems = FileHandler.loadCart(this.getId());
-            if (savedItems != null) {
+            if (savedItems != null && !savedItems.isEmpty()) {
                 for (Barang item : savedItems) {
-                    this.keranjang.tambahBarang(item);
+                    if (item != null) {
+                        this.keranjang.tambahBarang(item);
+                    }
                 }
             }
         } catch (Exception e) {
-            System.out.println("Gagal memuat keranjang belanja: " + e.getMessage());
+            System.out.println("Info: Tidak ada keranjang tersimpan atau terjadi kesalahan memuat keranjang");
         }
     }
 
@@ -51,6 +53,9 @@ class Customer extends Akun {
         transaksi.prosesPembayaran();
         transaksi.cetakResi();
         
+        // Simpan transaksi ke file
+        FileHandler.saveTransactionHistory(transaksi);
+        
         listTransaksi.add(transaksi);
         historiTransaksi.add(transaksi);
         keranjang.barang.clear();
@@ -58,16 +63,18 @@ class Customer extends Akun {
     }
 
     public void lihatHistori() {
-        if (historiTransaksi.isEmpty()) {
+        List<Transaksi> savedTransactions = FileHandler.loadTransactionHistory(this.getId());
+        
+        if (savedTransactions.isEmpty()) {
             System.out.println("Belum ada histori transaksi");
             return;
         }
 
         System.out.println("\nHistori Transaksi:");
-        for (Transaksi transaksi : historiTransaksi) {
+        for (Transaksi transaksi : savedTransactions) {
             System.out.println("-----------------------");
             System.out.println("ID Transaksi: " + transaksi.IDTransaksi);
-            System.out.println("Total: Rp." + transaksi.getTotalHarga());
+            System.out.println("Total: Rp." + transaksi.totalHarga);
             System.out.println("Metode Pembayaran: " + transaksi.pembayaran);
         }
     }
