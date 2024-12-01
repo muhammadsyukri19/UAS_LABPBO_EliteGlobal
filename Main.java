@@ -6,12 +6,12 @@ import java.util.*;
  * membuat akun Customer baru, dan keluar dari program.
  *
  * @author Alief Aulia SAG (2308107010028),
- *	   Muhammad Nazlul Ramadhyan (2308107010036), 
+ *	       Muhammad Nazlul Ramadhyan (2308107010036), 
  *         Muhammad Sidqi Alfareza (2308107010040),
  *         Razian Sabri (2308107010050), 
- *	   Naufal Farrel Syafilan (2308107010058),
- *	   Muhammad Syukri (2308107010060),
- *	   Halim Elsa Putra (2308107010062),
+ *	       Naufal Farrel Syafilan (2308107010058),
+ *	       Muhammad Syukri (2308107010060),
+ *	       Halim Elsa Putra (2308107010062),
  *		 
  * @since 2024-12-1
  */
