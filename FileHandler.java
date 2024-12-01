@@ -1,25 +1,24 @@
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FileHandler {
-    private static final String PRODUCTS_FILE = "produk.txt";
-    private static final String CUSTOMERS_FILE = "customer.txt";
-    private static final String TRANSACTIONS_FILE = "transaksi.txt";
-    private static final String CART_DIR = "keranjang/";
+    private static final String PRODUCTS_FILE = "produk.txt";  // File produk
+    private static final String CUSTOMERS_DIR = "customers/";   // Direktori untuk menyimpan data customer
+    private static final String CART_FILE = "keranjang.txt";    // File untuk menyimpan data keranjang
 
     // Method untuk menyimpan customer baru
     public static void saveCustomer(Customer customer) {
         try {
-            // Buka file dalam mode append
-            try (PrintWriter writer = new PrintWriter(new FileWriter(CUSTOMERS_FILE, true))) {
-                // Tambahkan newline jika file tidak kosong
-                if (new File(CUSTOMERS_FILE).length() > 0) {
-                    writer.println();
-                }
-                writer.printf("%s,%s", customer.getId(), customer.getPassword());
+            // Pastikan folder customers ada
+            new File(CUSTOMERS_DIR).mkdirs();
+            String filename = CUSTOMERS_DIR + customer.getId() + ".txt";
+            try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) {
+                // Menyimpan ID (username) dan password yang sudah di-hash
+                writer.println(customer.getId());
+                writer.println(hashPassword(customer.getPassword()));
             }
         } catch (IOException e) {
             System.out.println("Error saving customer: " + e.getMessage());
@@ -29,19 +28,22 @@ public class FileHandler {
     // Method untuk memuat daftar customer
     public static List<Customer> loadCustomers() {
         List<Customer> customers = new ArrayList<>();
-        File file = new File(CUSTOMERS_FILE);
+        File dir = new File(CUSTOMERS_DIR);
         
-        if (file.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(",");
-                    if (parts.length == 2) {
-                        customers.add(new Customer(parts[0].trim(), parts[1].trim()));
+        if (dir.exists() && dir.isDirectory()) {
+            File[] files = dir.listFiles((_, name) -> name.endsWith(".txt"));
+            if (files != null) {
+                for (File file : files) {
+                    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                        String id = reader.readLine();
+                        String password = reader.readLine();
+                        if (id != null && password != null) {
+                            customers.add(new Customer(id, password));
+                        }
+                    } catch (IOException e) {
+                        System.out.println("Error loading customer: " + e.getMessage());
                     }
                 }
-            } catch (IOException e) {
-                System.out.println("Error loading customers: " + e.getMessage());
             }
         }
         return customers;
@@ -50,9 +52,9 @@ public class FileHandler {
     // Method untuk menyimpan keranjang belanja
     public static void saveCart(String customerId, List<Barang> items) {
         try {
-            new File(CART_DIR).mkdirs();
-            String filename = CART_DIR + customerId + "_keranjang.txt";
-            try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) {
+            // Buka file keranjang untuk customer tertentu
+            try (PrintWriter writer = new PrintWriter(new FileWriter(CART_FILE, true))) { // Append mode
+                writer.printf("Customer ID: %s%n", customerId);  // Menyimpan ID pelanggan
                 for (Barang item : items) {
                     writer.printf("%s,%s,%d,%d%n", 
                         item.getId(), 
@@ -60,29 +62,45 @@ public class FileHandler {
                         item.getHarga(), 
                         item.getStok());
                 }
+                writer.println(); // Menambahkan garis baru setelah menyimpan keranjang
             }
         } catch (IOException e) {
             System.out.println("Error saving cart: " + e.getMessage());
         }
     }
 
-    // Method untuk memuat keranjang belanja
+    // Method untuk memuat keranjang belanja berdasarkan ID pelanggan
     public static List<Barang> loadCart(String customerId) {
         List<Barang> items = new ArrayList<>();
-        String filename = CART_DIR + customerId + "_keranjang.txt";
-        File cartFile = new File(filename);
+        
+        File cartFile = new File(CART_FILE);
         
         if (cartFile.exists()) {
             try (BufferedReader reader = new BufferedReader(new FileReader(cartFile))) {
                 String line;
+                boolean isTargetCustomer = false;
                 while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(",");
-                    if (parts.length == 4) {
-                        items.add(new Barang(
-                            parts[0], 
-                            parts[1], 
-                            Integer.parseInt(parts[2]), 
-                            Integer.parseInt(parts[3])));
+                    // Memeriksa apakah baris berisi ID pelanggan
+                    if (line.startsWith("Customer ID: " + customerId)) {
+                        isTargetCustomer = true;  // Mulai membaca keranjang pelanggan tersebut
+                        continue;  // Skip baris ini, lanjutkan ke baris berikutnya
+                    }
+
+                    if (isTargetCustomer && !line.trim().isEmpty()) {
+                        String[] parts = line.split(",");
+                        if (parts.length == 4) {
+                            items.add(new Barang(
+                                parts[0], 
+                                parts[1], 
+                                Integer.parseInt(parts[2]), 
+                                Integer.parseInt(parts[3])
+                            ));
+                        }
+                    }
+
+                    // Jika menemukan keranjang pelanggan lain, hentikan membaca
+                    if (isTargetCustomer && line.trim().isEmpty()) {
+                        break;
                     }
                 }
             } catch (IOException e) {
@@ -94,14 +112,42 @@ public class FileHandler {
 
     // Method untuk menghapus keranjang belanja
     public static void clearCart(String customerId) {
-        String filename = CART_DIR + customerId + "_keranjang.txt";
-        File cartFile = new File(filename);
+        File cartFile = new File(CART_FILE);
         if (cartFile.exists()) {
-            cartFile.delete();
+            try {
+                List<String> lines = new ArrayList<>();
+                try (BufferedReader reader = new BufferedReader(new FileReader(cartFile))) {
+                    String line;
+                    boolean isTargetCustomer = false;
+                    while ((line = reader.readLine()) != null) {
+                        // Cek apakah baris berisi ID pelanggan
+                        if (line.startsWith("Customer ID: " + customerId)) {
+                            isTargetCustomer = true;  // Mulai menghapus keranjang untuk pelanggan ini
+                        } 
+                        if (!isTargetCustomer) {
+                            lines.add(line);
+                        }
+
+                        // Jika mencapai akhir keranjang pelanggan, berhenti menambah baris
+                        if (isTargetCustomer && line.trim().isEmpty()) {
+                            isTargetCustomer = false;  // Menghentikan penghapusan
+                        }
+                    }
+                }
+
+                // Menulis ulang file tanpa keranjang pelanggan yang dihapus
+                try (PrintWriter writer = new PrintWriter(new FileWriter(cartFile))) {
+                    for (String line : lines) {
+                        writer.println(line);
+                    }
+                }
+            } catch (IOException e) {
+                System.out.println("Error clearing cart: " + e.getMessage());
+            }
         }
     }
 
-    // Method untuk menambah produk ke file
+    // Method untuk menambah produk ke file produk
     public static void appendProductToFile(Barang barang) {
         try {
             // Cek apakah file kosong atau tidak
@@ -144,6 +190,7 @@ public class FileHandler {
         }
     }
 
+    // Method untuk memperbarui file produk
     public static void updateProductsFile(List<Barang> barangList) {
         try (PrintWriter writer = new PrintWriter(new FileWriter(PRODUCTS_FILE))) {
             for (Barang barang : barangList) {
@@ -162,16 +209,11 @@ public class FileHandler {
     public static void loadProductsFromFile(ListBarang listBarang) {
         File file = new File(PRODUCTS_FILE);
         if (!file.exists()) {
-            System.out.println("File produk.txt belum ada. Membuat file baru...");
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                System.out.println("Error creating file: " + e.getMessage());
-            }
+            System.out.println("File products.txt belum ada. Membuat file baru...");
             return;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(PRODUCTS_FILE))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
@@ -180,82 +222,11 @@ public class FileHandler {
                     String nama = parts[1].trim();
                     int harga = Integer.parseInt(parts[2].trim());
                     int stok = Integer.parseInt(parts[3].trim());
-                    
                     listBarang.tambahBarang(new Barang(id, nama, harga, stok));
                 }
             }
         } catch (IOException e) {
-            System.out.println("Error membaca file produk.txt: " + e.getMessage());
-            e.printStackTrace();
-        } catch (NumberFormatException e) {
-            System.out.println("Error parsing number: " + e.getMessage());
-            e.printStackTrace();
+            System.out.println("Error membaca file products.txt: " + e.getMessage());
         }
     }
-
-    // Method untuk menyimpan transaksi
-    public static void saveTransaction(Transaksi transaksi) {
-        try {
-            // Buka file dalam mode append
-            try (PrintWriter writer = new PrintWriter(new FileWriter(TRANSACTIONS_FILE, true))) {
-                // Tambahkan newline jika file tidak kosong
-                if (new File(TRANSACTIONS_FILE).length() > 0) {
-                    writer.println();
-                }
-                writer.printf("%d,%s,%s,%d", 
-                    transaksi.IDTransaksi,
-                    transaksi.akun.getId(),
-                    transaksi.pembayaran.toString(),
-                    transaksi.getTotalHarga());
-            }
-        } catch (IOException e) {
-            System.out.println("Error saving transaction: " + e.getMessage());
-        }
-    }
-
-    // Method untuk memuat transaksi
-    public static List<Transaksi> loadTransactions() {
-        List<Transaksi> transactions = new ArrayList<>();
-        File file = new File(TRANSACTIONS_FILE);
-        
-        if (file.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(",");
-                    if (parts.length == 4) {
-                        int id = Integer.parseInt(parts[0].trim());
-                        String customerId = parts[1].trim();
-                        String paymentMethod = parts[2].trim();
-                        int totalAmount = Integer.parseInt(parts[3].trim());
-                        
-                        // Buat objek transaksi dari data yang dibaca
-                        Customer customer = new Customer(customerId, "");
-                        Pembayaran payment;
-                        
-                        // Tentukan jenis pembayaran berdasarkan string
-                        if (paymentMethod.contains("QRIS")) {
-                            payment = new QRIS();
-                        } else if (paymentMethod.contains("COD")) {
-                            payment = new COD();
-                        } else if (paymentMethod.contains("Bank")) {
-                            String bankName = paymentMethod.replace("Pembayaran melalui ", "");
-                            payment = new Bank(bankName);
-                        } else {
-                            payment = new QRIS(); // Default ke QRIS
-                        }
-                        
-                        Transaksi transaksi = new Transaksi(customer, new ArrayList<>(), payment);
-                        transaksi.IDTransaksi = id;
-                        transaksi.totalHarga = totalAmount;
-                        
-                        transactions.add(transaksi);
-                    }
-                }
-            } catch (IOException e) {
-                System.out.println("Error loading transactions: " + e.getMessage());
-            }
-        }
-        return transactions;
-    }
-} 
+}
