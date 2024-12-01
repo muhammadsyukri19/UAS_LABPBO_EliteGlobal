@@ -13,9 +13,15 @@ class Customer extends Akun {
     }
 
     private void loadSavedCart() {
-        List<Barang> savedItems = FileHandler.loadCart(this.getId());
-        for (Barang item : savedItems) {
-            this.keranjang.tambahBarang(item);
+        try {
+            List<Barang> savedItems = FileHandler.loadCart(this.getId());
+            if (savedItems != null) {
+                for (Barang item : savedItems) {
+                    this.keranjang.tambahBarang(item);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Gagal memuat keranjang belanja: " + e.getMessage());
         }
     }
 
