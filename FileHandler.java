@@ -8,6 +8,7 @@ public class FileHandler {
     private static final String PRODUCTS_FILE = "products.txt";  // File produk
     private static final String CUSTOMERS_DIR = "customers/";   // Direktori untuk menyimpan data customer
     private static final String CART_FILE = "keranjang.txt";    // File untuk menyimpan data keranjang
+    private static final String TRANSACTION_HISTORY_FILE = "riwayat_transaksi.txt";  // Ubah nama file
 
     // Method untuk menyimpan customer baru
     public static void saveCustomer(Customer customer) {
@@ -72,39 +73,44 @@ public class FileHandler {
     // Method untuk memuat keranjang belanja berdasarkan ID pelanggan
     public static List<Barang> loadCart(String customerId) {
         List<Barang> items = new ArrayList<>();
-        
         File cartFile = new File(CART_FILE);
         
         if (cartFile.exists()) {
             try (BufferedReader reader = new BufferedReader(new FileReader(cartFile))) {
                 String line;
                 boolean isTargetCustomer = false;
+                
                 while ((line = reader.readLine()) != null) {
-                    // Memeriksa apakah baris berisi ID pelanggan
-                    if (line.startsWith("Customer ID: " + customerId)) {
-                        isTargetCustomer = true;  // Mulai membaca keranjang pelanggan tersebut
-                        continue;  // Skip baris ini, lanjutkan ke baris berikutnya
+                    if (line.trim().isEmpty()) {
+                        isTargetCustomer = false;
+                        continue;
                     }
-
-                    if (isTargetCustomer && !line.trim().isEmpty()) {
+                    
+                    if (line.equals("Customer ID: " + customerId)) {
+                        isTargetCustomer = true;
+                        continue;
+                    }
+                    
+                    if (isTargetCustomer) {
                         String[] parts = line.split(",");
                         if (parts.length == 4) {
-                            items.add(new Barang(
-                                parts[0], 
-                                parts[1], 
-                                Integer.parseInt(parts[2]), 
-                                Integer.parseInt(parts[3])
-                            ));
+                            try {
+                                Barang barang = new Barang(
+                                    parts[0].trim(),
+                                    parts[1].trim(),
+                                    Integer.parseInt(parts[2].trim()),
+                                    Integer.parseInt(parts[3].trim())
+                                );
+                                items.add(barang);
+                            } catch (NumberFormatException e) {
+                                System.out.println("Warning: Mengabaikan baris dengan format tidak valid");
+                            }
                         }
-                    }
-
-                    // Jika menemukan keranjang pelanggan lain, hentikan membaca
-                    if (isTargetCustomer && line.trim().isEmpty()) {
-                        break;
                     }
                 }
             } catch (IOException e) {
-                System.out.println("Error loading cart: " + e.getMessage());
+                System.out.println("Info: Gagal membaca file keranjang");
+                return new ArrayList<>(); // Return empty list instead of null
             }
         }
         return items;
@@ -227,6 +233,119 @@ public class FileHandler {
             }
         } catch (IOException e) {
             System.out.println("Error membaca file products.txt: " + e.getMessage());
+        }
+    }
+
+    // Tambahkan method baru untuk menyimpan histori transaksi
+    public static void saveTransactionHistory(Transaksi transaksi) {
+        // Pastikan direktori ada
+        File directory = new File("data");
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        try (FileWriter fw = new FileWriter("data/" + TRANSACTION_HISTORY_FILE, true);
+             PrintWriter writer = new PrintWriter(new BufferedWriter(fw))) {
+            
+            // Format: customerId,transactionId,total,paymentMethod
+            writer.printf("%s,%d,%d,%s%n",
+                transaksi.akun.getId(),
+                transaksi.IDTransaksi,
+                transaksi.totalHarga,
+                transaksi.pembayaran.toString().replace(",", ";")); // Hindari konflik dengan delimiter
+            writer.flush(); // Pastikan data tertulis
+            
+        } catch (IOException e) {
+            System.out.println("Error menyimpan transaksi: " + e.getMessage());
+        }
+    }
+
+    // Method untuk membaca histori transaksi
+    public static List<Transaksi> loadTransactionHistory(String customerId) {
+        List<Transaksi> transactions = new ArrayList<>();
+        File file = new File("data/" + TRANSACTION_HISTORY_FILE);
+        
+        if (!file.exists()) {
+            return transactions;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                try {
+                    String[] parts = line.split(",");
+                    if (parts.length >= 4 && parts[0].equals(customerId)) {
+                        // Parse data
+                        String userId = parts[0].trim();
+                        int transId = Integer.parseInt(parts[1].trim());
+                        double total = Double.parseDouble(parts[2].trim());
+                        String paymentMethod = parts[3].trim().replace(";", ",");
+
+                        // Buat objek pembayaran
+                        Pembayaran payment;
+                        if (paymentMethod.contains("QRIS")) {
+                            payment = new QRIS();
+                        } else if (paymentMethod.contains("COD")) {
+                            payment = new COD();
+                        } else {
+                            String bankName = paymentMethod.replace("Pembayaran melalui ", "");
+                            payment = new Bank(bankName);
+                        }
+
+                        // Buat transaksi baru
+                        Customer customer = new Customer(userId, "");
+                        Transaksi transaksi = new Transaksi(customer, new ArrayList<>(), payment);
+                        transaksi.IDTransaksi = transId;
+                        transaksi.totalHarga = (int)total;
+                        transactions.add(transaksi);
+                    }
+                } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                    System.out.println("Warning: Mengabaikan baris tidak valid dalam file histori");
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Error membaca histori: " + e.getMessage());
+        }
+        
+        return transactions;
+    }
+
+    // Method baru untuk membaca semua transaksi
+    public static void displayAllTransactions() {
+        File file = new File("data/" + TRANSACTION_HISTORY_FILE);
+        
+        if (!file.exists()) {
+            System.out.println("Belum ada riwayat transaksi.");
+            return;
+        }
+
+        System.out.println("\nDaftar Semua Transaksi:");
+        System.out.println("----------------------------------------");
+        System.out.printf("| %-10s | %-8s | %-12s | %-15s |\n", 
+            "User ID", "ID Trans", "Total", "Metode Bayar");
+        System.out.println("----------------------------------------");
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                try {
+                    String[] parts = line.split(",");
+                    if (parts.length >= 4) {
+                        String userId = parts[0].trim();
+                        String transId = parts[1].trim();
+                        String total = String.format("Rp%,d", Integer.parseInt(parts[2].trim()));
+                        String paymentMethod = parts[3].trim().replace(";", ",");
+
+                        System.out.printf("| %-10s | %-8s | %-12s | %-15s |\n",
+                            userId, transId, total, paymentMethod);
+                    }
+                } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                    System.out.println("Warning: Data transaksi tidak valid");
+                }
+            }
+            System.out.println("----------------------------------------");
+        } catch (IOException e) {
+            System.out.println("Error membaca riwayat transaksi: " + e.getMessage());
         }
     }
 }
