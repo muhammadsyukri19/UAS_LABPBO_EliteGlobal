@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FileHandler {
-    private static final String PRODUCTS_FILE = "produk.txt";  // File produk
+    private static final String PRODUCTS_FILE = "products.txt";  // File produk
     private static final String CUSTOMERS_DIR = "customers/";   // Direktori untuk menyimpan data customer
     private static final String CART_FILE = "keranjang.txt";    // File untuk menyimpan data keranjang
 
