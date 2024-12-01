@@ -1,5 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 class Keranjang {
     List<Barang> barang;
@@ -20,31 +22,27 @@ class Keranjang {
 
         // Menampilkan jumlah barang di keranjang
         System.out.println("Keranjang Belanja:");
-        System.out.printf("Total Barang: %d%n", barang.size()); // Menampilkan jumlah barang
+        System.out.printf("Total Barang: %d%n", barang.size());
 
-        // Menampilkan jumlah untuk setiap barang yang unik
-        System.out.println("Daftar Barang:");
+        // Buat map untuk menghitung jumlah setiap barang
+        Map<String, Integer> itemCount = new HashMap<>();
+        Map<String, Barang> itemDetails = new HashMap<>();
+
+        // Hitung jumlah setiap barang
         for (Barang item : barang) {
-            int count = 0;
+            itemCount.put(item.getId(), itemCount.getOrDefault(item.getId(), 0) + 1);
+            itemDetails.put(item.getId(), item);
+        }
 
-            // Hitung jumlah setiap barang
-            for (Barang b : barang) {
-                if (item.getId().equals(b.getId())) {
-                    count++;
-                }
-            }
-
-            // Hanya tampilkan barang unik
-            if (count > 0) {
-                System.out.printf("- %s (ID: %s, Harga: Rp.%d) x%d%n", 
-                    item.getNama(), 
-                    item.getId(), 
-                    item.getHarga(), 
-                    count);
-                
-                // Hapus barang yang sudah ditampilkan untuk mencegah duplikasi
-                barang.removeIf(b -> b.getId().equals(item.getId()));
-            }
+        // Tampilkan barang unik dengan jumlahnya
+        System.out.println("Daftar Barang:");
+        for (Map.Entry<String, Integer> entry : itemCount.entrySet()) {
+            Barang item = itemDetails.get(entry.getKey());
+            System.out.printf("- %s (ID: %s, Harga: Rp.%d) x%d%n", 
+                item.getNama(), 
+                item.getId(), 
+                item.getHarga(), 
+                entry.getValue());
         }
     }
 }
