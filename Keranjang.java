@@ -18,12 +18,33 @@ class Keranjang {
             return;
         }
 
+        // Menampilkan jumlah barang di keranjang
         System.out.println("Keranjang Belanja:");
-        for (Barang item : this.barang) {
-            System.out.printf("- %s (ID: %s, Harga: Rp.%d)%n", 
-                item.getNama(), 
-                item.getId(), 
-                item.getHarga());
+        System.out.printf("Total Barang: %d%n", barang.size()); // Menampilkan jumlah barang
+
+        // Menampilkan jumlah untuk setiap barang yang unik
+        System.out.println("Daftar Barang:");
+        for (Barang item : barang) {
+            int count = 0;
+
+            // Hitung jumlah setiap barang
+            for (Barang b : barang) {
+                if (item.getId().equals(b.getId())) {
+                    count++;
+                }
+            }
+
+            // Hanya tampilkan barang unik
+            if (count > 0) {
+                System.out.printf("- %s (ID: %s, Harga: Rp.%d) x%d%n", 
+                    item.getNama(), 
+                    item.getId(), 
+                    item.getHarga(), 
+                    count);
+                
+                // Hapus barang yang sudah ditampilkan untuk mencegah duplikasi
+                barang.removeIf(b -> b.getId().equals(item.getId()));
+            }
         }
     }
 }
